@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
+
 	"go.uber.org/zap"
 
 	"github.com/asfourco/todo-templates/backend/db"
@@ -50,9 +52,9 @@ func (tc *TodoController) CreateTodo(dbClient *db.PostgresClient, r *http.Reques
 	return data, nil
 }
 
-func (tc *TodoController) GetTodo(dbClient *db.PostgresClient, r *http.Request) (interface{}, error) {
+func (tc *TodoController) GetTodo(dbClient *db.PostgresClient, r *http.Request) (resp interface{}, err error) {
 	request := models.GetTodoRequest{}
-	err := dhttp.ExtractRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
+	err = dhttp.ExtractRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
 		"id": []string{"required"},
 	}))
 	if err != nil {
@@ -64,9 +66,12 @@ func (tc *TodoController) GetTodo(dbClient *db.PostgresClient, r *http.Request) 
 
 	var data models.Todo
 	err = row.Scan(&data.Id, &data.Title, &data.Active, &data.CreatedAt, &data.UpdatedAt)
+	if err != nil && err == pgx.ErrNoRows {
+		return nil, fmt.Errorf("Todo not found")
+	}
 	if err != nil {
 		zlog.Error("Failed to scan todo", zap.Error(err))
-		return nil, nil
+		return nil, fmt.Errorf("Error fetching todo: %w", err)
 	}
 
 	return data, nil
@@ -155,6 +160,9 @@ func (tc *TodoController) DeleteTodo(dbClient *db.PostgresClient, r *http.Reques
 	condition := fmt.Sprintf("id = %d", request.Id)
 
 	err = dbClient.Delete("todos", condition)
+	if err != nil && err == errors.New("no rows deleted") {
+		return nil, fmt.Errorf("Todo not found")
+	}
 	if err != nil {
 		zlog.Error("Failed to delete todo", zap.Error(err))
 		return &models.DeleteTodoResponse{Deleted: false}, err

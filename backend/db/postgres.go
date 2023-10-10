@@ -185,6 +185,12 @@ func (p *PostgresClient) Delete(tableName string, condition string) error {
 	}
 	defer conn.Release()
 
-	_, err = conn.Exec(p.ctx, query)
-	return err
+	result, err := conn.Exec(p.ctx, query)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("no rows deleted")
+	}
+	return nil
 }

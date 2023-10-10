@@ -6,8 +6,9 @@ import (
 	"github.com/asfourco/todo-templates/backend/controllers"
 )
 
-func (s *Server) GetTodoList(r *http.Request) (interface{}, error) {
-	tc := controllers.TodoController{}
+var tc = controllers.TodoController{}
+
+func (s *Server) GetTodoList(r *http.Request) (resp interface{}, err error) {
 	result, err := tc.GetTodoList(s.postgresClient, r)
 	if err != nil {
 		return nil, err
@@ -15,8 +16,7 @@ func (s *Server) GetTodoList(r *http.Request) (interface{}, error) {
 	return result, nil
 }
 
-func (s *Server) GetTodo(r *http.Request) (interface{}, error) {
-	tc := controllers.TodoController{}
+func (s *Server) GetTodo(r *http.Request) (resp interface{}, err error) {
 	result, err := tc.GetTodo(s.postgresClient, r)
 	if err != nil {
 		return nil, err
@@ -24,8 +24,7 @@ func (s *Server) GetTodo(r *http.Request) (interface{}, error) {
 	return result, nil
 }
 
-func (s *Server) CreateTodo(r *http.Request) (interface{}, error) {
-	tc := controllers.TodoController{}
+func (s *Server) CreateTodo(r *http.Request) (resp interface{}, err error) {
 	result, err := tc.CreateTodo(s.postgresClient, r)
 	if err != nil {
 		return nil, err
@@ -33,8 +32,7 @@ func (s *Server) CreateTodo(r *http.Request) (interface{}, error) {
 	return result, nil
 }
 
-func (s *Server) UpdateTodo(r *http.Request) (interface{}, error) {
-	tc := controllers.TodoController{}
+func (s *Server) UpdateTodo(r *http.Request) (resp interface{}, err error) {
 	result, err := tc.UpdateTodo(s.postgresClient, r)
 	if err != nil {
 		return nil, err
@@ -42,7 +40,7 @@ func (s *Server) UpdateTodo(r *http.Request) (interface{}, error) {
 	return result, nil
 }
 
-func (s *Server) DeleteTodo(r *http.Request) (interface{}, error) {
+func (s *Server) DeleteTodo(r *http.Request) (resp interface{}, err error) {
 	tc := controllers.TodoController{}
 	result, err := tc.DeleteTodo(s.postgresClient, r)
 	if err != nil {
