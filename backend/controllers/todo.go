@@ -15,14 +15,12 @@ import (
 	"github.com/streamingfast/validator"
 )
 
-type TodoController struct {
-}
+type TodoController struct{}
 
 func (tc *TodoController) CreateTodo(dbClient *db.PostgresClient, r *http.Request) (interface{}, error) {
 	request := models.CreateTodoRequest{}
 	err := dhttp.ExtractJSONRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
-		"Title":       []string{"required"},
-		"Description": []string{},
+		"title": []string{},
 	}))
 	if err != nil {
 		return nil, err
@@ -31,58 +29,62 @@ func (tc *TodoController) CreateTodo(dbClient *db.PostgresClient, r *http.Reques
 	var columns []string
 	var args []interface{}
 
-	if request.Title != "" {
-		columns = append(columns, "Title")
+	if request.Title != nil {
+		columns = append(columns, "title")
 		args = append(args, request.Title)
 	}
 
 	zlog.Info("CreateTodo", zap.Any("request", request))
-	todo, err := dbClient.Insert("todos", columns, args)
+	row, err := dbClient.Insert("todos", columns, args)
 	if err != nil {
-		zlog.Error("Failed to insert todo", zap.Error(err))
+		zlog.Error("Failed to insert row", zap.Error(err))
 		return nil, err
 	}
 	var data models.Todo
-	err = todo.Scan(&data.Id, &data.Title, &data.Active, &data.CreatedAt, &data.UpdatedAt)
+	err = row.Scan(&data.Id, &data.Title, &data.Active, &data.CreatedAt, &data.UpdatedAt)
 	if err != nil {
-		zlog.Error("Failed to scan todo", zap.Error(err))
+		zlog.Error("Failed to scan row", zap.Error(err))
 		return nil, err
 	}
 
-	return &models.CreateTodoResponse{Todo: data}, nil
+	return data, nil
 }
 
 func (tc *TodoController) GetTodo(dbClient *db.PostgresClient, r *http.Request) (interface{}, error) {
 	request := models.GetTodoRequest{}
-	err := dhttp.ExtractJSONRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
-		"Id": []string{"required"},
+	err := dhttp.ExtractRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
+		"id": []string{"required"},
 	}))
 	if err != nil {
 		return nil, err
 	}
 
 	row := dbClient.SelectOne("todos", "*", "id = "+strconv.Itoa(request.Id))
+	zlog.Info("GetTodo", zap.Any("row", row))
+
 	var data models.Todo
 	err = row.Scan(&data.Id, &data.Title, &data.Active, &data.CreatedAt, &data.UpdatedAt)
 	if err != nil {
 		zlog.Error("Failed to scan todo", zap.Error(err))
+		return nil, nil
 	}
 
-	return &models.GetTodoResponse{Todo: data}, nil
+	return data, nil
 }
 
 func (tc *TodoController) GetTodoList(dbClient *db.PostgresClient, r *http.Request) (interface{}, error) {
-	request := models.GetTodosRequest{Page: 1, PageSize: db.DEFAULT_PAGE_SIZE}
-	err := dhttp.ExtractJSONRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
-		"Page":      []string{"required"},
-		"PageSize":  []string{"required"},
-		"Completed": []string{},
+	request := models.GetTodosRequest{Page: 0, PageSize: db.DEFAULT_PAGE_SIZE}
+	err := dhttp.ExtractRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
+		"page":      []string{},
+		"page_size": []string{},
+		"active":    []string{},
+		"order_by":  []string{},
 	}))
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := dbClient.SelectAll("todos", "id, complete, title, description, created_at", request.Page, request.PageSize)
+	rows, err := dbClient.SelectAll("todos", "id, title, active, created_at, updated_at", request.Page, request.PageSize, request.OrderBy)
 	if err != nil {
 		zlog.Error("Failed to select todos", zap.Error(err))
 		return nil, err
@@ -92,7 +94,7 @@ func (tc *TodoController) GetTodoList(dbClient *db.PostgresClient, r *http.Reque
 	var data []models.Todo
 	for rows.Next() {
 		var todo models.Todo
-		err = rows.Scan(&todo.Id, &todo.Active, &todo.Title, &todo.CreatedAt)
+		err = rows.Scan(&todo.Id, &todo.Title, &todo.Active, &todo.CreatedAt, &todo.UpdatedAt)
 		if err != nil {
 			zlog.Error("Failed to scan todo", zap.Error(err))
 		} else {
@@ -105,10 +107,9 @@ func (tc *TodoController) GetTodoList(dbClient *db.PostgresClient, r *http.Reque
 func (tc *TodoController) UpdateTodo(dbClient *db.PostgresClient, r *http.Request) (interface{}, error) {
 	request := models.UpdateTodoRequest{}
 	err := dhttp.ExtractJSONRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
-		"id":          []string{"required"},
-		"title":       []string{},
-		"description": []string{},
-		"active":      []string{},
+		"id":     []string{},
+		"title":  []string{},
+		"active": []string{},
 	}))
 	if err != nil {
 		return nil, err
@@ -123,7 +124,7 @@ func (tc *TodoController) UpdateTodo(dbClient *db.PostgresClient, r *http.Reques
 	}
 
 	if request.Active != nil {
-		updates = append(updates, "complete = $"+strconv.Itoa(len(args)+1))
+		updates = append(updates, "active = $"+strconv.Itoa(len(args)+1))
 		args = append(args, request.Active)
 	}
 
@@ -139,13 +140,13 @@ func (tc *TodoController) UpdateTodo(dbClient *db.PostgresClient, r *http.Reques
 		zlog.Error("Failed to update todo", zap.Error(err))
 		return nil, err
 	}
-	return &models.UpdateTodoResponse{}, nil
+	return nil, nil
 }
 
 func (tc *TodoController) DeleteTodo(dbClient *db.PostgresClient, r *http.Request) (interface{}, error) {
 	request := models.DeleteTodoRequest{}
-	err := dhttp.ExtractJSONRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
-		"Id": []string{"required"},
+	err := dhttp.ExtractRequest(r.Context(), r, &request, dhttp.NewRequestValidator(validator.Rules{
+		"id": []string{"required"},
 	}))
 	if err != nil {
 		return nil, err

@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 
 	"go.uber.org/zap"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -28,7 +28,8 @@ func NewPostgresClient(ctx context.Context, url string) (*PostgresClient, error)
 	if err != nil {
 		return nil, err
 	}
-	pool, err := pgxpool.ConnectConfig(ctx, poolConfig)
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -57,17 +58,19 @@ func (p *PostgresClient) CreateTable(tableName string, columns string) error {
 }
 
 // Insert Inserts a record into the database
-func (p *PostgresClient) Insert(tableName string, columns []string, args []interface{}) (pgx.Row, error) {
+func (p *PostgresClient) Insert(tableName string, columnNames []string, args []interface{}) (pgx.Row, error) {
 
-	var argCount string
-	for i := range columns {
+	var values string
+	for i := range columnNames {
 		if i > 0 {
-			argCount += ", "
+			values += ", "
 		}
-		argCount += "$" + strconv.Itoa(i+1)
+		values += "$" + strconv.Itoa(i+1)
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", tableName, strings.Join(columns, ","), argCount)
+	columns := strings.Join(columnNames, ", ")
+
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING *", tableName, columns, values)
 	zlog.Info("Insert", zap.String("query", query))
 
 	conn, err := p.Pool.Acquire(p.ctx)
@@ -83,7 +86,7 @@ func (p *PostgresClient) Insert(tableName string, columns []string, args []inter
 // SelectOne Fetches one record from the database
 func (p *PostgresClient) SelectOne(tableName string, columns string, condition string) pgx.Row {
 
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s AND Active = true", columns, tableName, condition)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s", columns, tableName, condition)
 	zlog.Info("SelectOne", zap.String("query", query))
 
 	conn, err := p.Pool.Acquire(p.ctx)
@@ -107,7 +110,7 @@ func (p *PostgresClient) Select(tableName string, columns string, condition stri
 		offset = page * pageSize
 	}
 
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s AND active = true LIMIT %d OFFSET %d", columns, tableName, condition, limit, offset)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s LIMIT %d OFFSET %d", columns, tableName, condition, limit, offset)
 	zlog.Info("Select", zap.String("query", query))
 
 	conn, err := p.Pool.Acquire(p.ctx)
@@ -120,7 +123,7 @@ func (p *PostgresClient) Select(tableName string, columns string, condition stri
 }
 
 // SelectAll returns all records in the table
-func (p *PostgresClient) SelectAll(tableName string, columns string, page int, pageSize int) (pgx.Rows, error) {
+func (p *PostgresClient) SelectAll(tableName string, columns string, page int, pageSize int, orderBy string) (pgx.Rows, error) {
 	limit := DEFAULT_PAGE_SIZE
 	if pageSize > 0 {
 		limit = pageSize
@@ -130,8 +133,14 @@ func (p *PostgresClient) SelectAll(tableName string, columns string, page int, p
 	if page > 0 {
 		offset = page * pageSize
 	}
+	query := fmt.Sprintf("SELECT %s FROM %s", columns, tableName)
+	if orderBy != "" {
+		query += " ORDER BY " + orderBy
+	} else {
+		query += " ORDER BY id"
+	}
+	query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
 
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE Active = true LIMIT %d OFFSET %d", columns, tableName, limit, offset)
 	zlog.Info("SelectAll", zap.Any("query", query))
 
 	conn, err := p.Pool.Acquire(p.ctx)
@@ -145,7 +154,7 @@ func (p *PostgresClient) SelectAll(tableName string, columns string, page int, p
 
 // Update updates an item in the database
 func (p *PostgresClient) Update(tableName string, updates string, condition string, args []interface{}) error {
-	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s AND Active = true", tableName, updates, condition)
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s RETURNING *", tableName, updates, condition)
 	zlog.Info("Update", zap.Any("query", query))
 
 	conn, err := p.Pool.Acquire(p.ctx)

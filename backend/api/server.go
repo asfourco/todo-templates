@@ -3,8 +3,10 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/streamingfast/dhttp"
+
 	"net/http"
+
+	"github.com/streamingfast/dhttp"
 
 	"go.uber.org/zap"
 
@@ -70,16 +72,17 @@ func (s *Server) configureHttpRouter() error {
 	// API v1 router
 	apiV1Router := s.router.PathPrefix("/api/v1").Subrouter()
 	apiV1Router.Use(dhttp.NewCORSMiddleware("*"))
+	apiV1Router.Use(LogRequestMiddleware)
 
 	// API REST router
 	apiRestRouter := apiV1Router.PathPrefix("/").Subrouter()
 
 	// API Todo router
-	apiTodoRouter := apiRestRouter.PathPrefix("/todo").Subrouter()
-	apiTodoRouter.Methods("GET", "OPTIONS").Path("/").Handler(dhttp.JSONHandler(s.GetTodoList))
+	apiTodoRouter := apiRestRouter.PathPrefix("/todos").Subrouter()
 	apiTodoRouter.Methods("GET", "OPTIONS").Path("/{id}").Handler(dhttp.JSONHandler(s.GetTodo))
-	apiTodoRouter.Methods("POST", "OPTIONS").Path("/").Handler(dhttp.JSONHandler(s.CreateTodo))
-	apiTodoRouter.Methods("PUT", "OPTIONS").Path("/{id}").Handler(dhttp.JSONHandler(s.UpdateTodo))
+	apiTodoRouter.Methods("GET", "OPTIONS").Handler(dhttp.JSONHandler(s.GetTodoList))
+	apiTodoRouter.Methods("POST", "OPTIONS").Handler(dhttp.JSONHandler(s.CreateTodo))
+	apiTodoRouter.Methods("PATCH", "OPTIONS").Handler(dhttp.JSONHandler(s.UpdateTodo))
 	apiTodoRouter.Methods("DELETE", "OPTIONS").Path("/{id}").Handler(dhttp.JSONHandler(s.DeleteTodo))
 
 	// walk configured routes

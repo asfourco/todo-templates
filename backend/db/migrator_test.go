@@ -4,11 +4,12 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"github.com/testcontainers/testcontainers-go"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/testcontainers/testcontainers-go"
 
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 

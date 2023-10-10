@@ -21,3 +21,8 @@ lint:
 format:
 	find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -w -s
 	find . -name '*.go' -type f -not -path "*.git*" | xargs goimports -w -local github.com/
+
+run-be:
+	INFO=.+ ./build/todo serve
+
+local-be: clean build run-be
