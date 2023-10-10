@@ -5,7 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/asfourco/templates/backend/db"
+	"github.com/asfourco/todo-templates/backend/db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -33,7 +33,7 @@ func dbMigrateE(cmd *cobra.Command, args []string) error {
 
 	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPassword, dbHost, dbPort, dbName)
 
-	zlog.Info("Migrating datbase", zap.String("dbUrl", dbUrl))
+	zlog.Info("Migrating database", zap.String("dbUrl", dbUrl))
 
 	migrator := db.NewMigration(dbUrl, migrationsDir, nil)
 

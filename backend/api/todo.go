@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/asfourco/templates/backend/controllers"
+	"github.com/asfourco/todo-templates/backend/controllers"
 )
 
 func (s *Server) GetTodoList(r *http.Request) (interface{}, error) {

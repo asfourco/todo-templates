@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/asfourco/templates/backend/api"
-	"github.com/asfourco/templates/backend/db"
+	"github.com/asfourco/todo-templates/backend/api"
+	"github.com/asfourco/todo-templates/backend/db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/derr"
@@ -17,20 +17,21 @@ import (
 var serveCmd = &cobra.Command{Use: "serve", Short: "starts the HTTP API server", RunE: serveE}
 
 func init() {
-	serveCmd.Flags().Int("port", 8080, "HTTP port")
+	serveCmd.Flags().String("port", ":8080", "HTTP port")
 }
 
 func serveE(cmd *cobra.Command, _ []string) error {
 	cmd.SilenceUsage = true
 	ctx := cmd.Context()
 
-	port := viper.GetUint16("port")
+	port := viper.GetString("serve-port")
 	dbHost := viper.GetString("global-db-host")
 	dbPort := viper.GetString("global-db-port")
 	dbUser := viper.GetString("global-db-user")
+	dbName := viper.GetString("global-db-name")
 	dbPassword := viper.GetString("global-db-password")
 
-	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPassword, dbHost, dbPort, "todo")
+	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPassword, dbHost, dbPort, dbName)
 	postgresClient, err := db.NewPostgresClient(ctx, dbUrl)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
@@ -70,7 +71,7 @@ func serveE(cmd *cobra.Command, _ []string) error {
 	case <-app.Terminated():
 	case <-ctx.Done():
 	case <-time.After(10 * time.Second):
-		zlog.Error("app did not erminate within 10s, forcing exit")
+		zlog.Error("app did not terminate within 10s, forcing exit")
 	}
 
 	zlog.Info("app terminated")

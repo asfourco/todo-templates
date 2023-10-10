@@ -3,19 +3,19 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/streamingfast/dhttp"
 	"net/http"
 
 	"go.uber.org/zap"
 
-	"github.com/asfourco/templates/backend/db"
+	"github.com/asfourco/todo-templates/backend/db"
 	"github.com/gorilla/mux"
-	"github.com/streamingfast/dhttp"
 	"github.com/streamingfast/shutter"
 )
 
 type Server struct {
 	ctx        context.Context
-	listenPort uint16
+	listenPort string
 
 	router  *mux.Router
 	handler http.Handler
@@ -25,14 +25,16 @@ type Server struct {
 	DefaultPageSize uint16
 }
 
-func NewServer(ctx context.Context, listenPort uint16, postgresClient *db.PostgresClient) (*Server, error) {
-	s := &Server{
+func NewServer(ctx context.Context, listenPort string, postgresClient *db.PostgresClient) (s *Server, err error) {
+	zlog.Info("creating HTTP server", zap.String("port", listenPort))
+	s = &Server{
 		ctx:             ctx,
 		listenPort:      listenPort,
+		router:          mux.NewRouter(),
 		postgresClient:  postgresClient,
 		DefaultPageSize: db.DEFAULT_PAGE_SIZE,
 	}
-	if err := s.configureHttpServer(); err != nil {
+	if err := s.configureHttpRouter(); err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -45,21 +47,21 @@ func (s *Server) Start(app *shutter.Shutter) error {
 	}
 
 	server := &http.Server{
-		Addr:     fmt.Sprintf(":%d", s.listenPort),
+		Addr:     s.listenPort,
 		Handler:  s.handler,
 		ErrorLog: stdLogger,
 	}
 
 	go func() {
-		zlog.Info("serving HTTP", zap.Int("port", int(s.listenPort)))
+		zlog.Info("serving HTTP", zap.String("port", s.listenPort))
 		go app.Shutdown(server.ListenAndServe())
 	}()
 
 	return nil
 }
 
-func (s *Server) configureHttpServer() error {
-	zlog.Info("configuring HTTP server")
+func (s *Server) configureHttpRouter() error {
+	zlog.Info("configuring HTTP router")
 
 	// monitoring
 	monitoringRouter := s.router.PathPrefix("/").Subrouter()
@@ -74,8 +76,8 @@ func (s *Server) configureHttpServer() error {
 
 	// API Todo router
 	apiTodoRouter := apiRestRouter.PathPrefix("/todo").Subrouter()
-	apiTodoRouter.Methods("GET", "OPTIONS").Path("/{id}").Handler(dhttp.JSONHandler(s.GetTodo))
 	apiTodoRouter.Methods("GET", "OPTIONS").Path("/").Handler(dhttp.JSONHandler(s.GetTodoList))
+	apiTodoRouter.Methods("GET", "OPTIONS").Path("/{id}").Handler(dhttp.JSONHandler(s.GetTodo))
 	apiTodoRouter.Methods("POST", "OPTIONS").Path("/").Handler(dhttp.JSONHandler(s.CreateTodo))
 	apiTodoRouter.Methods("PUT", "OPTIONS").Path("/{id}").Handler(dhttp.JSONHandler(s.UpdateTodo))
 	apiTodoRouter.Methods("DELETE", "OPTIONS").Path("/{id}").Handler(dhttp.JSONHandler(s.DeleteTodo))

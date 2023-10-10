@@ -5,7 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/asfourco/templates/backend/db"
+	"github.com/asfourco/todo-templates/backend/db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

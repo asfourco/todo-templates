@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS todos
+CREATE TABLE public.todos
 (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,

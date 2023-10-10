@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/asfourco/templates/backend/db"
-	"github.com/asfourco/templates/backend/models"
+	"github.com/asfourco/todo-templates/backend/db"
+	"github.com/asfourco/todo-templates/backend/models"
 	"github.com/streamingfast/dhttp"
 	"github.com/streamingfast/validator"
 )
