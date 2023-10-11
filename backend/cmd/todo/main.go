@@ -15,7 +15,7 @@ func init() {
 	rootCmd.PersistentFlags().String("db-user", getEnv("DB_USER", "postgres"), "Database user")
 	rootCmd.PersistentFlags().String("db-password", getEnv("DB_PASSWORD", "postgres"), "Database password")
 	rootCmd.PersistentFlags().String("db-name", getEnv("DB_NAME", "todo"), "Database name")
-	dbCmd.PersistentFlags().String("migrations-dir", getEnv("DB_MIGRATIONS_DIR", "backend/db/migrations"), "Migrations directory")
+	dbCmd.PersistentFlags().String("migrations-dir", getEnv("DB_MIGRATIONS_DIR", "db/migrations"), "Migrations directory")
 
 	cobra.OnInitialize(func() {
 		autoBind(rootCmd, "cmd")

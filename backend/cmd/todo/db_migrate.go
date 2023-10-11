@@ -32,9 +32,6 @@ func dbMigrateE(cmd *cobra.Command, args []string) error {
 	migrationsDir := viper.GetString("db-migrations-dir")
 
 	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPassword, dbHost, dbPort, dbName)
-
-	zlog.Info("Migrating database", zap.String("dbUrl", dbUrl))
-
 	migrator := db.NewMigration(dbUrl, migrationsDir, nil)
 
 	zlog.Info("Migrating database", zap.String("dbUrl", dbUrl))

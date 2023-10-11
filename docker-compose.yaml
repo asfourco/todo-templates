@@ -23,7 +23,52 @@ services:
       todo:
         ipv4_address: 10.101.0.5
 
+  db_migrate:
+    image: todo-backend:latest
+    platform: linux/amd64
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: todo db migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: todo
+      DB_PORT: 5432
+      DB_MIGRATIONS_DIR: /opt/app/db/migrations
+    networks:
+      todo:
+        ipv4_address: 10.101.0.4
 
+  backend:
+    image: todo-backend:latest
+    platform: linux/amd64
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: todo
+      DB_PORT: 5432
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 10s
+      retries: 36
+    depends_on:
+      db_migrate:
+        condition: service_completed_successfully
+    networks:
+      todo:
+          ipv4_address: 10.101.0.10
 networks:
   todo:
     driver: bridge
