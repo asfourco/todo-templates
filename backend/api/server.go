@@ -82,7 +82,7 @@ func (s *Server) configureHttpRouter() error {
 	apiTodoRouter.Methods("GET", "OPTIONS").Path("/{id}").Handler(dhttp.JSONHandler(s.GetTodo))
 	apiTodoRouter.Methods("GET", "OPTIONS").Handler(dhttp.JSONHandler(s.GetTodoList))
 	apiTodoRouter.Methods("POST", "OPTIONS").Handler(dhttp.JSONHandler(s.CreateTodo))
-	apiTodoRouter.Methods("PATCH", "OPTIONS").Handler(dhttp.JSONHandler(s.UpdateTodo))
+	apiTodoRouter.Methods("PATCH", "PUT", "OPTIONS").Handler(dhttp.JSONHandler(s.UpdateTodo))
 	apiTodoRouter.Methods("DELETE", "OPTIONS").Path("/{id}").Handler(dhttp.JSONHandler(s.DeleteTodo))
 
 	// walk configured routes
