@@ -1,6 +1,5 @@
 import React from 'react';
 import TodoList from './components/TodoList';
-import {Paper} from "@mui/material";
 import { ThemeProvider} from "@mui/material/styles";
 import theme from "./theme";
 

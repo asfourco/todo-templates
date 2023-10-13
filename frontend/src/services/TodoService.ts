@@ -1,7 +1,8 @@
 import axios from 'axios';
 import {Todo} from "../models/Todo";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1/todos';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+const API_URL = `${BACKEND_URL}/api/v1/todos`;
 
 export const getTodos = async (page: number, pageSize: number):Promise<Todo[]> =>
     await axios.get(API_URL, {
