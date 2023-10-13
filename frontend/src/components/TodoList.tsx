@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Todo } from '../models/Todo';
 import { getTodos } from '../services/TodoService';
 import TodoItem from './TodoItem';
+import TodoForm from "./TodoForm";
+import { List, ListItem, Button, Paper } from '@mui/material';
 
 const TodoList: React.FC = () => {
     const [page, setPage] = useState<number>(0);
     const [pageSize, setPageSize] = useState<number>(10); // Default page size
     const [todos, setTodos] = useState<Todo[]>([]);
     const [loading, setLoading] = useState(true);
+
 
     const loadTodos = () => {
         getTodos(page, pageSize)
@@ -43,27 +46,37 @@ const TodoList: React.FC = () => {
     };
 
     return (
-        <div>
-            <ul>
+        <Paper elevation={1} style={{ padding: '16px', width: '80%', margin: '0 auto' }}>
+            <h1> My Lists of things ...</h1>
+            <TodoForm todos={todos} setTodos={setTodos} />
+            <List>
                 {todos.map((todo) => (
-                    <TodoItem
-                        key={todo.id}
-                        todo={todo}
-                        onTodoUpdate={handleTodoUpdate}
-                        onTodoDelete={handleTodoDelete}
-                    />
+                    <ListItem key={todo.id} alignItems="flex-start">
+                        <TodoItem
+                            todo={todo}
+                            onTodoUpdate={handleTodoUpdate}
+                            onTodoDelete={handleTodoDelete}
+                        />
+                    </ListItem>
                 ))}
-            </ul>
+            </List>
             <div>
-                <button
+                <Button
+                    variant="contained"
                     onClick={() => setPage(page - 1)}
-                    disabled={page === 1}
+                    disabled={page === 0}
                 >
                     Previous Page
-                </button>
-                <button onClick={() => setPage(page + 1)}>Next Page</button>
+                </Button>
+                <Button
+                    variant="contained"
+                    onClick={() => setPage(page + 1)}
+                    disabled={todos.length < pageSize}
+                >
+                    Next Page
+                </Button>
             </div>
-        </div>
+        </Paper>
     );
 };
 

@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { Todo } from '../models/Todo';
 import { updateTodo, deleteTodo } from '../services/TodoService';
+import {
+    TextField,
+    Typography,
+    Checkbox,
+    ListItem,
+    ListItemButton,
+    ListItemText, ListItemIcon
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 interface TodoProps {
     todo: Todo;
@@ -45,28 +57,51 @@ const TodoItem: React.FC<TodoProps> = ({ todo, onTodoUpdate, onTodoDelete }) => 
     };
 
     return (
-        <li key={todo.id}>
+        <ListItem
+            key={todo.id}
+            alignItems="flex-start"
+            disablePadding
+        >
             {isEditing ? (
-                <div>
-                    <input
-                        type="text"
+                <ListItemButton>
+                    <ListItemText>
+                    <TextField
+                        label="Edit Title"
                         value={newTitle}
                         onChange={(e) => setNewTitle(e.target.value)}
+                        fullWidth
                     />
-                    <button onClick={handleSaveEdit}>Save</button>
-                    <button onClick={handleCancelEdit}>Cancel</button>
-                </div>
+                    </ListItemText>
+
+                    <ListItemIcon onClick={handleSaveEdit}>
+                                <SaveIcon />
+                        </ListItemIcon>
+                    <ListItemIcon onClick={handleCancelEdit}>
+                                <CancelIcon />
+                        </ListItemIcon>
+                </ListItemButton>
             ) : (
-                <div>
-                    {todo.title} (Active: {todo.active ? 'Yes' : 'No'})
-                    <button onClick={handleToggleActive}>
-                        {todo.active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button onClick={handleEdit}>Edit</button>
-                    <button onClick={handleDeleteTodo}>Delete</button>
-                </div>
+
+                    <ListItemButton>
+                        <ListItemText>
+                            <Typography variant="h6">{todo.title}</Typography>
+                        </ListItemText>
+                        <ListItemIcon>
+                            <Checkbox
+                                checked={!todo.active}
+                                onChange={handleToggleActive}
+                                inputProps={{ 'aria-label': 'Toggle Active' }}
+                            />
+                        </ListItemIcon>
+                        <ListItemIcon onClick={handleEdit}>
+                            <EditIcon />
+                        </ListItemIcon>
+                        <ListItemIcon color="error" onClick={handleDeleteTodo}>
+                            <DeleteIcon />
+                        </ListItemIcon>
+                    </ListItemButton>
             )}
-        </li>
+        </ListItem>
     );
 };
 

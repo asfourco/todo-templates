@@ -1,12 +1,13 @@
 import axios from 'axios';
+import {Todo} from "../models/Todo";
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1/todos';
 
-export const getTodos = async (page: number, pageSize: number) =>
+export const getTodos = async (page: number, pageSize: number):Promise<Todo[]> =>
     await axios.get(API_URL, {
         params: { page, page_size: pageSize },
     });
-export const getTodo = async (id: number) => await axios.get(`${API_URL}/${id}`);
+export const getTodo = async (id: number):Promise<Todo> => await axios.get(`${API_URL}/${id}`);
 export const createTodo = async (title: string) => await axios.post(API_URL, { title });
 export const updateTodo = async (id: number, title: string, active: boolean) =>
     await axios.put(API_URL, { id, title, active });
