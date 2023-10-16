@@ -1,4 +1,17 @@
-FROM node:latest
+FROM node:latest as base
+
+RUN set -eux && \
+    apt update && \
+    apt install -y --no-install-recommends \
+        bash \
+        software-properties-common \
+        ca-certificates \
+        git \
+        build-essential && \
+        apt autoremove -y && \
+        apt clean &&
+
+FROM base as dependencies
 
 WORKDIR /opt/app
 
